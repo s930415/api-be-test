@@ -1,17 +1,16 @@
 name: Notify frontend on API change
 
 # Thin caller —— 實際邏輯在 s930415/be2fe-actions（reusable workflow）。
+# on: push —— 每次 push(任一分支)就重產 spec + commit 回該分支(給前端 check 抓最新);
+#             合約真的變了才 dispatch(引擎內已 gate),避免洗版。
 on:
-  pull_request:
-    types: [closed]
-    # 不限 branches = 所有分支 merge 都廣播;前端自己決定要不要聽
+  push:
+    branches:
+      - '**'
   workflow_dispatch:
 
 jobs:
   notify:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.merged == true
     permissions:
       contents: write
     uses: s930415/be2fe-actions/.github/workflows/be-notify-frontend.yml@v2
