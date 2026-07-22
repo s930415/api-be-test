@@ -4,7 +4,9 @@ name: Notify frontend on API change
 on:
   pull_request:
     types: [closed]
-    branches: [main]
+    branches:
+      - main
+      - uat
   workflow_dispatch:
 
 jobs:
