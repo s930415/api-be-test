@@ -1,46 +1,64 @@
-name: Notify frontend on API change
+name: Generate spec & notify frontend
 
 # 觸發時機:
 #  1. PR 被 merge 到 main(真實情境)
-#  2. workflow_dispatch —— 讓你不用真的開 PR 也能手動測(Actions 頁面按 Run workflow)
+#  2. workflow_dispatch —— 手動測
 on:
   pull_request:
     types: [closed]
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write   # 要把重新產生的 openapi.yaml commit 回 repo
+
 jobs:
-  notify:
-    # 只在「PR 真的被 merge」或「手動觸發」時執行(關掉 PR 但沒 merge 不算)
+  spec:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: 解析要通知的 commit sha
-        id: vars
-        env:
-          EVENT: ${{ github.event_name }}
-          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PUSH_SHA: ${{ github.sha }}
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: 從程式碼產生 OpenAPI 合約(mvn test 跑 OpenApiExportTest)
+        run: mvn -B -ntp test
+
+      - name: 合約有變更就 commit 回 repo
+        id: spec
         run: |
-          if [ "$EVENT" = "pull_request" ]; then
-            echo "sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
-            echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- openapi.yaml; then
+            echo "spec 有變更,commit 回 main"
+            git add openapi.yaml
+            git commit -m "chore(openapi): regenerate spec [skip ci]"
+            git push origin main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "sha=$PUSH_SHA" >> "$GITHUB_OUTPUT"
-            echo "pr_number=0" >> "$GITHUB_OUTPUT"
+            echo "spec 無變更"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: 送 repository_dispatch 給前端 repo
         env:
           # FE_DISPATCH_TOKEN = fine-grained PAT,授權 api-fe-test 的 Contents: write
-          # 存在「本(後端)repo」的 Settings → Secrets → Actions
           GH_TOKEN: ${{ secrets.FE_DISPATCH_TOKEN }}
           REPO: ${{ github.repository }}
-          SHA: ${{ steps.vars.outputs.sha }}
-          PR_NUMBER: ${{ steps.vars.outputs.pr_number }}
+          SHA: ${{ steps.spec.outputs.sha }}
+          CHANGED: ${{ steps.spec.outputs.changed }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
         run: |
           cat > payload.json <<EOF
           {
@@ -50,17 +68,17 @@ jobs:
               "sha": "$SHA",
               "ref": "main",
               "spec_path": "openapi.yaml",
+              "spec_changed": "$CHANGED",
               "pr_number": $PR_NUMBER
             }
           }
           EOF
           echo "--- dispatch payload ---"
           cat payload.json
-          echo "--- sending ---"
           curl -sS --fail-with-body -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/s930415/api-fe-test/dispatches \
             -d @payload.json
-          echo "✅ dispatch 已送出(HTTP 204 = 成功,無回傳內容)"
+          echo "✅ dispatch 已送出(HTTP 204 = 成功)"
