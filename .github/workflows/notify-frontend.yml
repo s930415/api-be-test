@@ -4,9 +4,7 @@ name: Notify frontend on API change
 on:
   pull_request:
     types: [closed]
-    branches:
-      - main
-      - uat
+    # 不限 branches = 所有分支 merge 都廣播;前端自己決定要不要聽
   workflow_dispatch:
 
 jobs:
@@ -16,7 +14,7 @@ jobs:
       github.event.pull_request.merged == true
     permissions:
       contents: write
-    uses: s930415/be2fe-actions/.github/workflows/be-notify-frontend.yml@v1
+    uses: s930415/be2fe-actions/.github/workflows/be-notify-frontend.yml@v2
     with:
       frontend-repo: s930415/api-fe-test
     secrets:
