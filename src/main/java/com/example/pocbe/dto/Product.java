@@ -11,5 +11,6 @@ public record Product(
     @Schema(description = "價格", example = "4.5") double price,
     @Schema(description = "庫存數量", example = "100") int stock,
     @Schema(description = "商品分類", example = "drinks") String category,
-    @Schema(description = "商品貨號", example = "SKU-001") String sku
+    @Schema(description = "商品貨號", example = "SKU-001") String sku,
+    @Schema(description = "供應商", example = "ACME") String supplier
 ) {}

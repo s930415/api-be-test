@@ -16,8 +16,8 @@ public class ProductController {
     @Operation(operationId = "listProducts", summary = "取得商品列表")
     public List<Product> list() {
         return List.of(
-            new Product(1, "Coffee", 4.5, 100, "drinks", "SKU-001"),
-            new Product(2, "Tea", 3.0, 50, "drinks", "SKU-002")
+            new Product(1, "Coffee", 4.5, 100, "drinks", "SKU-001", "ACME"),
+            new Product(2, "Tea", 3.0, 50, "drinks", "SKU-002", "Globex")
         );
     }
 }
