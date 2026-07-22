@@ -1,0 +1,55 @@
+openapi: 3.0.3
+info:
+  title: api-be-test
+  version: 1.0.0
+  description: >-
+    POC 後端 API 合約(source of truth)。
+    改動這個檔案 = 模擬一次 API 變更;merge 到 main 後會自動觸發前端 repo 重新產生型別。
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: 健康檢查
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /products:
+    get:
+      operationId: listProducts
+      summary: 取得商品列表
+      responses:
+        '200':
+          description: 商品陣列
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+    Product:
+      type: object
+      required: [id, name, price]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        price:
+          type: number
+          format: float
