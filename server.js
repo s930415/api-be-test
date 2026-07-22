@@ -12,8 +12,8 @@ app.get('/health', (req, res) => {
 
 app.get('/products', (req, res) => {
   res.json([
-    { id: 1, name: 'Coffee', price: 4.5 },
-    { id: 2, name: 'Tea', price: 3.0 },
+    { id: 1, name: 'Coffee', price: 4.5, stock: 100 },
+    { id: 2, name: 'Tea', price: 3.0, stock: 50 },
   ]);
 });
 
