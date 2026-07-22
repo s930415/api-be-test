@@ -3,11 +3,13 @@
 POC 後端。**OpenAPI 合約由 springdoc 從程式碼(Controller + DTO)自動產生**,不是手寫。
 
 - 改 `src/main/java/.../dto/Product.java` 或 Controller = 模擬一次 API 變更。
-- PR merge 到 main 後,`.github/workflows/notify-frontend.yml` 會:
+- `.github/workflows/notify-frontend.yml` 是 **thin caller**,實際邏輯在
+  [`s930415/be2fe-actions`](https://github.com/s930415/be2fe-actions)(reusable workflow,pin `@v2`)。
+- **任一分支** merge PR 後(後端廣播所有分支),引擎會:
   1. `mvn test` 跑 `OpenApiExportTest` → 打 springdoc 的 `/v3/api-docs.yaml` → 寫出 `openapi.yaml`
-  2. 若 `openapi.yaml` 有變更 → commit 回 repo
-  3. 帶「最新 sha」送 `repository_dispatch` 給前端 `api-fe-test`
-  4. 前端抓該 sha 的 `openapi.yaml` → 重新產生型別 → 開 PR
+  2. 若 `openapi.yaml` 有變更 → commit 回「該分支」
+  3. 帶 `{ branch, sha }` 送 `repository_dispatch` 給前端 `api-fe-test`
+  4. 前端依自己的 `subscribe` 決定要不要聽、對哪支分支開 PR
 
 ## 技術棧
 
