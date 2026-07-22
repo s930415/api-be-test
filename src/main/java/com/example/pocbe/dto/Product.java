@@ -9,5 +9,6 @@ public record Product(
     @Schema(description = "商品 ID", example = "1") long id,
     @Schema(description = "商品名稱", example = "Coffee") String name,
     @Schema(description = "價格", example = "4.5") double price,
-    @Schema(description = "庫存數量", example = "100") int stock
+    @Schema(description = "庫存數量", example = "100") int stock,
+    @Schema(description = "商品分類", example = "drinks") String category
 ) {}
